@@ -23,7 +23,14 @@ document.addEventListener('DOMContentLoaded', () => {
      * @returns {ArrayBuffer}
      */
     const base64urlToBuffer = (str) => {
-        const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+        let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+        const pad = base64.length % 4;
+        if (pad) {
+            if (pad === 2) base64 += '==';
+            else if (pad === 3) base64 += '=';
+            else throw new Error('Invalid base64url string!');
+        }
+
         const binaryStr = atob(base64);
         const len = binaryStr.length;
         const bytes = new Uint8Array(len);
@@ -50,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * @returns {string}
      */
     const bufferToColonHex = (buffer) => {
-        return new Uint8Array(buffer)
+        return Array.from(new Uint8Array(buffer))
             .map(b => b.toString(16).padStart(2, '0').toUpperCase())
             .join(':');
     };
