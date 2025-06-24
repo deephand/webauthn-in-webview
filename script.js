@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 2. Check for WebAuthn API (PublicKeyCredential)
         const webAuthnAvailable = !!window.PublicKeyCredential;
-        renderStatus('WebAuthn API', webAuthnAvailable, 'Checks for <code>window.PublicKeyCredential</code>. If this fails on Android, you may need to call <code>WebSettingsCompat.setWebAuthenticationSupport()</code> in your app.');
+        renderStatus('WebAuthn API', webAuthnAvailable, 'Checks for <code>window.PublicKeyCredential</code>. If this fails on Android, you may need to call <code>WebSettingsCompat</code> <code>.setWebAuthenticationSupport()</code> in your app.');
         if (!webAuthnAvailable) {
             log('WebAuthn API not found. This browser/WebView does not support WebAuthn.', null, 'error');
         }
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (webAuthnAvailable && PublicKeyCredential.isConditionalMediationAvailable) {
             conditionalMediationAvailable = await PublicKeyCredential.isConditionalMediationAvailable();
         }
-        renderStatus('Conditional Mediation', conditionalMediationAvailable, 'Also known as "Passkey Autofill". May not be implemented in Chromium WebView yet, but the underlying WebAuthn support is still available.');
+        renderStatus('Conditional Mediation', conditionalMediationAvailable, 'Also known as "Passkey Autofill". May not be implemented in WebViews based on Chromium.');
         
         log('Environment checks complete.');
         loadCredentialsFromStorage();
