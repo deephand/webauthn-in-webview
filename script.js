@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Configuration ---
+    // A list of trusted SHA-256 hashes of your Android app's signing certificate.
+    // The received hash will be compared against this list.
+    const ALLOWED_ANDROID_HASHES = [
+        "32:A2:FC:74:D7:31:10:58:59:E5:A8:5D:F1:6D:95:F1:02:D8:5B:22:09:9B:80:64:C5:D8:91:5C:61:DA:D1:E0"
+    ];
+
     // --- DOM Elements ---
     const statusContainer = document.getElementById('status-checks');
     const getAssertionBtn = document.getElementById('get-assertion-btn');
@@ -35,6 +42,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const bytes = new Uint8Array(buffer);
         const binaryStr = String.fromCharCode.apply(null, bytes);
         return btoa(binaryStr).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    };
+
+    /**
+     * Converts an ArrayBuffer to a colon-separated hexadecimal string.
+     * @param {ArrayBuffer} buffer The ArrayBuffer to convert.
+     * @returns {string}
+     */
+    const bufferToColonHex = (buffer) => {
+        return new Uint8Array(buffer)
+            .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+            .join(':');
     };
 
     /**
@@ -165,6 +183,43 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /**
+     * Validates the origin from clientDataJSON.
+     * @param {string} receivedOrigin - The origin string from the authenticator.
+     * @throws Will throw an error if the origin is not valid.
+     */
+    const validateOrigin = (receivedOrigin) => {
+        const expectedWebOrigin = window.location.origin;
+        let isOriginValid = false;
+
+        // Check 1: Standard web origin
+        if (receivedOrigin === expectedWebOrigin) {
+            isOriginValid = true;
+        } 
+        // Check 2: Android App origin
+        else if (receivedOrigin.startsWith('android:apk-key-hash:')) {
+            const receivedHashBase64 = receivedOrigin.substring('android:apk-key-hash:'.length).trim();
+            try {
+                const receivedHashBuffer = base64urlToBuffer(receivedHashBase64);
+                const receivedHashHex = bufferToColonHex(receivedHashBuffer);
+                
+                log(`Received Android Hash: ${receivedHashHex}`);
+
+                if (ALLOWED_ANDROID_HASHES.includes(receivedHashHex)) {
+                    isOriginValid = true;
+                }
+            } catch (e) {
+                log('Error decoding Android origin hash', e.message, 'error');
+                isOriginValid = false;
+            }
+        }
+
+        if (!isOriginValid) {
+            throw new Error(`Origin mismatch! \nExpected Web Origin: ${expectedWebOrigin} \nOR Expected Android Hash In: [${ALLOWED_ANDROID_HASHES.join(', ')}] \nReceived: ${receivedOrigin}`);
+        }
+        log('✅ Origin verified');
+    };
+
+    /**
      * Loads credentials from local storage and displays them in the options panel.
      */
     const loadCredentialsFromStorage = () => {
@@ -224,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 user: { id: crypto.getRandomValues(new Uint8Array(16)), name: username, displayName: username },
                 pubKeyCredParams: [ { type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 } ],
                 authenticatorSelection: {
-                    // authenticatorAttachment: 'platform', // By omitting this, we allow both platform and cross-platform authenticators.
                     userVerification: 'required',
                     residentKey: 'required' // 'residentKey' is now an alias for 'discoverableCredential'
                 },
