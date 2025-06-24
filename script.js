@@ -306,11 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             log('✅ Challenge verified');
 
-            const expectedOrigin = window.location.origin;
-            if (clientDataJSON.origin !== expectedOrigin) {
-                throw new Error(`Origin mismatch! \nExpected: ${expectedOrigin} \nReceived: ${clientDataJSON.origin}`);
-            }
-            log('✅ Origin verified');
+            validateOrigin(clientDataJSON.origin);
             
             if (clientDataJSON.type !== 'webauthn.create') {
                 throw new Error(`Type mismatch! \nExpected: 'webauthn.create' \nReceived: '${clientDataJSON.type}'`);
@@ -388,11 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             log('✅ Challenge verified');
 
-            const expectedOrigin = window.location.origin;
-            if (clientDataJSON.origin !== expectedOrigin) {
-                throw new Error(`Origin mismatch! \nExpected: ${expectedOrigin} \nReceived: ${clientDataJSON.origin}`);
-            }
-            log('✅ Origin verified');
+            validateOrigin(clientDataJSON.origin);
 
             const authenticatorData = assertion.response.authenticatorData;
             const clientDataHash = await crypto.subtle.digest('SHA-256', assertion.response.clientDataJSON);
